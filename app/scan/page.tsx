@@ -180,7 +180,7 @@ export default function ScanPage() {
 
               {history.map((item) => {
                 // Menggunakan optional chaining untuk mengamankan pembacaan verdict dewasa
-                const verdictText = item.verdict || item.adult_assessment?.verdict || 'AMAN';
+                const verdictText = item.verdict || (item as any).adult_assessment?.verdict || 'AMAN';
 
                 return (
                   <div
