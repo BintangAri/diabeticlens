@@ -21,33 +21,47 @@ export async function POST(req: Request) {
     const mimeType = image.match(/[^:]\w+\/[\w-+\d.]+(?=;|,)/)?.[0] || "image/jpeg";
     const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
 
-    // UPDATE PROMPT: Minta Alternatif & Info Insulin
+    // UPDATE PROMPT: Pemisahan Logika Gula Dewasa (50g) dan Anak-anak (25g), Penghapusan Porsi Insulin
     const prompt = `
-      Kamu adalah ahli gizi spesialis diabetes. Analisis gambar label nutrisi ini.
-      
-      Tugasmu:
+      Anda adalah Ahli Gizi Klinis dan Sistem Pendukung Keputusan yang ahli dalam membaca Informasi Nilai Gizi (ING) pada kemasan produk di Indonesia.
+      Tugas Anda adalah membaca gambar label nutrisi kemasan, mengekstrak nilainya, dan mengklasifikasikan keamanan konsumsinya secara terpisah untuk orang DEWASA dan ANAK-ANAK.
+
+      Aturan Klasifikasi (Wajib digunakan sebagai logika utama):
+      1. Merujuk pada Peraturan Pemerintah (PP) No. 28 Tahun 2024 (BPOM dan WHO) tentang batas maksimum asupan gula harian:
+         - DEWASA: Maksimal 50 gram per hari (sekitar 4 sendok makan).
+         - ANAK-ANAK: Maksimal 25 gram per hari (sekitar 2 sendok makan atau 6 sendok teh).
+      2. Evaluasi Dewasa: Jika gula per sajian menyumbang >20-30% batas harian 50g, berikan verdict "HINDARI" atau "BATASI" dengan risk_level "Tinggi" atau "Sedang".
+      3. Evaluasi Anak: Jika gula per sajian menyumbang >20-30% batas harian 25g, berikan verdict "HINDARI" atau "BATASI" dengan risk_level "Tinggi" atau "Sedang".
+      4. Jika kandungan gula rendah/nol, dan karbohidrat wajar, berikan verdict "AMAN" dengan risk_level "Rendah".
+
+      Tugas Tambahan:
       1. Identifikasi Nama Makanan/Produk (jika tidak ada, tebak berdasarkan jenisnya).
-      2. Cari Total Karbohidrat, Gula, dan Serat.
-      3. Hitung "Carb Exchange" (1 Exchange = 15g Karbohidrat Total).
-      4. Jika verdict bukan "AMAN", berikan 2-3 alternatif makanan sejenis yang lebih sehat.
+      2. Hitung "Carb Exchange" (1 Exchange = 15g Karbohidrat Total).
+      3. Berikan 2-3 alternatif makanan sejenis yang lebih sehat jika produk masuk kategori BATASI/HINDARI.
       
-      Output WAJIB JSON valid (tanpa markdown) dengan format:
+      Output WAJIB JSON valid (tanpa markdown) dengan format berikut:
       {
         "food_name": "Nama Makanan",
-        "verdict": "AMAN" atau "BATASI" atau "HINDARI",
-        "risk_level": "Rendah/Sedang/Tinggi",
+        "adult_assessment": {
+           "verdict": "AMAN" | "BATASI" | "HINDARI",
+           "risk_level": "Rendah" | "Sedang" | "Tinggi",
+           "reasoning": "Penjelasan medis singkat (max 2 kalimat) mengaitkan angka gula dengan batas harian dewasa 50g."
+        },
+        "child_assessment": {
+           "verdict": "AMAN" | "BATASI" | "HINDARI",
+           "risk_level": "Rendah" | "Sedang" | "Tinggi",
+           "reasoning": "Penjelasan medis singkat (max 2 kalimat) mengaitkan angka gula dengan batas harian anak-anak 25g."
+        },
         "nutrients": {
            "total_carbs": "jumlah gram (angka saja, misal 20)",
            "sugar": "jumlah gram (angka saja, misal 15)",
            "fiber": "jumlah gram (angka saja, misal 2)"
         },
         "carb_info": {
-           "exchange": "angka estimasi takaran (misal 1.5)", 
-           "suggestion": "Saran porsi insulin singkat" 
+           "exchange": "angka estimasi takaran (misal 1.5)"
         },
         "healthy_alternatives": ["Alternatif 1", "Alternatif 2"],
-        "bad_ingredients": ["bahan 1", "bahan 2"],
-        "reasoning": "Penjelasan singkat max 2 kalimat."
+        "bad_ingredients": ["bahan 1", "bahan 2"]
       }
     `;
 
@@ -58,12 +72,27 @@ export async function POST(req: Request) {
 
     const response = await result.response;
     const text = response.text();
+    
+    // Sanitasi respons LLM agar menjadi format JSON yang murni
     const cleanedText = text.replace(/```json/g, "").replace(/```/g, "").trim();
     
     return NextResponse.json(JSON.parse(cleanedText));
 
-  } catch (error) {
-    console.error("Server Error:", error);
-    return NextResponse.json({ error: "Gagal memproses gambar" }, { status: 500 });
+  } catch (error: any) {
+    console.error("Gemini API Error:", error);
+    
+    // Menangkap error khusus 503 dari Google API saat server sedang sibuk
+    if (error.status === 503 || (error.message && error.message.includes('503'))) {
+      return NextResponse.json(
+        { error: "Layanan pemindai saat ini sedang sibuk karena tingginya permintaan. Silakan coba beberapa saat lagi." }, 
+        { status: 503 }
+      );
+    }
+
+    // Menangkap error umum lainnya
+    return NextResponse.json(
+      { error: "Gagal memproses gambar. Pastikan gambar jelas dan coba lagi." }, 
+      { status: 500 }
+    );
   }
 }
