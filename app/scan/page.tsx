@@ -112,13 +112,6 @@ export default function ScanPage() {
 
       <div className="pt-28 px-6 max-w-md mx-auto">
 
-        <Link
-          href="/"
-          className="inline-flex items-center text-blue-600 font-semibold hover:underline mb-8"
-        >
-          ← Kembali ke Prediksi Diabetes
-        </Link>
-
         <div className="text-center mb-10">
 
           <h1 className="text-4xl font-extrabold text-slate-900 leading-tight">
@@ -159,11 +152,12 @@ export default function ScanPage() {
           <>
             <ResultCard data={result} />
 
+            {/* TAUTAN KEMBALI DIBAWAH KARTU HASIL */}
             <Link
               href="/"
               className="block w-full text-center mt-6 py-4 rounded-2xl bg-slate-700 hover:bg-slate-800 text-white font-bold transition"
             >
-              ← Kembali ke Prediksi Diabetes
+              ← Kembali ke Beranda
             </Link>
           </>
         )}
@@ -227,9 +221,15 @@ export default function ScanPage() {
             </button>
 
           </div>
+          
 
         )}
 
+        <div className="mt-12 text-center">
+          <Link href="/" className="inline-flex items-center text-slate-500 font-bold hover:text-blue-600 hover:underline transition-colors">
+            &larr; Kembali ke Beranda
+          </Link>
+        </div>
       </div>
 
     </main>

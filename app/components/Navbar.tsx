@@ -11,7 +11,7 @@ export default function Navbar() {
 
       <nav className="glass-panel px-6 py-3 rounded-full flex items-center gap-6 shadow-lg shadow-gray-200/20">
 
-        {/* Logo */}
+        {/* Logo (Kembali ke Beranda Utama) */}
         <Link href="/" className="flex items-center gap-3">
 
           <div className="w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-blue-200 shadow-md">
@@ -29,10 +29,11 @@ export default function Navbar() {
         {/* Menu */}
         <div className="flex items-center gap-4">
 
+          {/* Menu Prediksi (Sudah diperbaiki) */}
           <Link
-            href="/"
+            href="/prediksi"
             className={`text-sm font-medium transition ${
-              pathname === '/'
+              pathname === '/prediksi'
                 ? 'text-blue-600'
                 : 'text-gray-500 hover:text-blue-600'
             }`}
@@ -65,4 +66,3 @@ export default function Navbar() {
     </header>
   );
 }
-
