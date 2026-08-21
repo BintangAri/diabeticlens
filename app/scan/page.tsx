@@ -152,13 +152,6 @@ export default function ScanPage() {
           <>
             <ResultCard data={result} />
 
-            {/* TAUTAN KEMBALI DIBAWAH KARTU HASIL */}
-            <Link
-              href="/"
-              className="block w-full text-center mt-6 py-4 rounded-2xl bg-slate-700 hover:bg-slate-800 text-white font-bold transition"
-            >
-              ← Kembali ke Beranda
-            </Link>
           </>
         )}
 
